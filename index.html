@@ -1,0 +1,869 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskEarn Pro - Daily Tasks & Investment Platform</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        },
+                        accent: {
+                            500: '#10b981',
+                            600: '#059669',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between pb-20 md:pb-0">
+
+    <!-- Top Header -->
+    <header class="glass-card sticky top-0 z-40 px-4 py-3 border-b border-slate-800">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-brand-600 to-accent-500 text-white p-2.5 rounded-xl shadow-lg shadow-brand-500/20">
+                    <i class="fa-solid me-1 fa-coins text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-none tracking-tight text-white">TaskEarn <span class="text-brand-500">Pro</span></h1>
+                    <span class="text-xs text-slate-400 font-medium">Earn & Invest Daily</span>
+                </div>
+            </div>
+
+            <!-- Profile & Active VIP Pill -->
+            <div class="flex items-center space-x-3">
+                <div class="text-right hidden sm:block">
+                    <div class="text-xs text-slate-400">Current Level</div>
+                    <div id="headerVipBadge" class="text-xs font-bold text-amber-400">BRONZE VIP</div>
+                </div>
+                <button onclick="switchTab('admin')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold flex items-center space-x-1 border border-slate-700 transition-all">
+                    <i class="fa-solid fa-user-shield text-brand-500"></i>
+                    <span>Admin Mode</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="max-w-6xl mx-auto px-4 py-6 w-full flex-1">
+
+        <!-- System Notification Toast Container -->
+        <div id="toastContainer" class="fixed top-16 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+        <!-- TAB 1: USER DASHBOARD -->
+        <section id="tab-dashboard" class="tab-content space-y-6">
+            <!-- Balance Overview Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass-card p-4 rounded-2xl relative overflow-hidden">
+                    <div class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Main Balance</div>
+                    <div class="text-2xl font-extrabold text-white" id="userMainBalance">$0.00</div>
+                    <div class="mt-2 text-xs text-emerald-400 flex items-center">
+                        <i class="fa-solid fa-arrow-trend-up mr-1"></i> Ready for payout
+                    </div>
+                </div>
+                
+                <div class="glass-card p-4 rounded-2xl relative overflow-hidden">
+                    <div class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Deposit Wallet</div>
+                    <div class="text-2xl font-extrabold text-brand-500" id="userDepositBalance">$0.00</div>
+                    <div class="mt-2 text-xs text-slate-400">Invested funds</div>
+                </div>
+
+                <div class="glass-card p-4 rounded-2xl relative overflow-hidden">
+                    <div class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Total Earned</div>
+                    <div class="text-2xl font-extrabold text-emerald-400" id="userTotalEarned">$0.00</div>
+                    <div class="mt-2 text-xs text-slate-400">Lifetime rewards</div>
+                </div>
+
+                <div class="glass-card p-4 rounded-2xl relative overflow-hidden">
+                    <div class="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Daily Limit</div>
+                    <div class="text-2xl font-extrabold text-amber-400"><span id="userTasksDone">0</span>/<span id="userTaskLimit">5</span></div>
+                    <div class="mt-2 text-xs text-slate-400">Tasks remaining</div>
+                </div>
+            </div>
+
+            <!-- Quick Action Bar -->
+            <div class="grid grid-cols-2 gap-4">
+                <button onclick="switchTab('wallet'); toggleWalletSubTab('deposit');" class="py-3 px-4 bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-600 font-semibold rounded-xl flex items-center justify-center space-x-2 shadow-lg shadow-brand-500/20 transition-all">
+                    <i class="fa-solid fa-wallet"></i>
+                    <span>Deposit Funds</span>
+                </button>
+                <button onclick="switchTab('wallet'); toggleWalletSubTab('withdraw');" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl flex items-center justify-center space-x-2 border border-slate-700 transition-all">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                    <span>Withdraw</span>
+                </button>
+            </div>
+
+            <!-- VIP Tier Upgrade Selection -->
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-bold text-white flex items-center">
+                        <i class="fa-solid fa-crown text-amber-400 mr-2"></i> VIP Membership Tiers
+                    </h2>
+                    <span class="text-xs text-slate-400">Higher tier = Higher daily earnings</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="vipTierGrid">
+                    <!-- Dynamic rendering of VIP Cards via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: DAILY TASKS ENGINE -->
+        <section id="tab-tasks" class="tab-content hidden space-y-6">
+            <div class="glass-card p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white">Daily Tasks Center</h2>
+                    <p class="text-xs text-slate-400">Complete task actions and wait for verification timer to earn rewards.</p>
+                </div>
+                <div class="bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 text-center">
+                    <span class="text-xs text-slate-400 block">Today's Progress</span>
+                    <span class="text-sm font-bold text-brand-500" id="taskEngineProgressText">0 / 5 Completed</span>
+                </div>
+            </div>
+
+            <div id="taskListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Dynamic tasks generated here -->
+            </div>
+        </section>
+
+        <!-- TAB 3: DEPOSIT & WITHDRAWAL (WALLET) -->
+        <section id="tab-wallet" class="tab-content hidden space-y-6">
+            <!-- Wallet Tabs Navigation -->
+            <div class="flex border-b border-slate-800 space-x-6">
+                <button id="btn-subtab-deposit" onclick="toggleWalletSubTab('deposit')" class="pb-3 text-sm font-bold border-b-2 border-brand-500 text-brand-500 transition-all">
+                    Deposit Money
+                </button>
+                <button id="btn-subtab-withdraw" onclick="toggleWalletSubTab('withdraw')" class="pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all">
+                    Withdraw Earnings
+                </button>
+            </div>
+
+            <!-- Deposit Section -->
+            <div id="wallet-deposit-section" class="space-y-6">
+                <div class="glass-card p-6 rounded-2xl max-w-xl mx-auto space-y-4">
+                    <h3 class="text-lg font-bold text-white flex items-center">
+                        <i class="fa-solid fa-qrcode text-brand-500 mr-2"></i> Add Funds to Account
+                    </h3>
+                    <form id="depositForm" onsubmit="handleDepositSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Select Gateway / Currency</label>
+                            <select id="depositGateway" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+                                <option value="USDT (TRC20)">USDT - TRC20 Crypto Network</option>
+                                <option value="Bank Transfer">Direct Bank Transfer</option>
+                                <option value="Debit Card">Credit / Debit Card Online</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Deposit Amount ($)</label>
+                            <input type="number" min="10" step="1" id="depositAmount" placeholder="e.g. 100" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Transaction Reference / Hash</label>
+                            <input type="text" id="depositTxRef" placeholder="Paste proof or reference number" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-500 font-bold rounded-xl text-sm transition-all shadow-lg shadow-brand-500/20">
+                            Submit Deposit Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Withdraw Section -->
+            <div id="wallet-withdraw-section" class="hidden space-y-6">
+                <div class="glass-card p-6 rounded-2xl max-w-xl mx-auto space-y-4">
+                    <h3 class="text-lg font-bold text-white flex items-center">
+                        <i class="fa-solid fa-money-bill-wave text-emerald-400 mr-2"></i> Request Payout
+                    </h3>
+                    <form id="withdrawForm" onsubmit="handleWithdrawSubmit(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Payout Method</label>
+                            <select id="withdrawMethod" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+                                <option value="USDT Wallet">USDT Crypto Wallet</option>
+                                <option value="Bank Account">Local Bank Account</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Withdrawal Amount ($)</label>
+                            <input type="number" min="5" step="1" id="withdrawAmount" placeholder="Min $5.00" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Account Number / Wallet Address</label>
+                            <input type="text" id="withdrawDestination" placeholder="Enter recipient details" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-500">
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl text-sm transition-all shadow-lg shadow-emerald-500/20">
+                            Submit Withdrawal Request
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- User Transaction Logs -->
+            <div class="glass-card p-4 rounded-2xl">
+                <h3 class="text-sm font-bold text-white mb-3">Your Recent Transactions</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/60 text-slate-400 uppercase">
+                            <tr>
+                                <th class="p-3">Type</th>
+                                <th class="p-3">Amount</th>
+                                <th class="p-3">Details</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTxTableBody" class="divide-y divide-slate-800 text-slate-300">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: REFERRAL / AFFILIATE PROGRAM -->
+        <section id="tab-referrals" class="tab-content hidden space-y-6">
+            <div class="glass-card p-6 rounded-2xl text-center max-w-xl mx-auto space-y-4">
+                <div class="w-16 h-16 bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-900 rounded-full flex items-center justify-center text-2xl mx-auto font-bold shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-users"></i>
+                </div>
+                <h2 class="text-xl font-extrabold text-white">Invite & Earn Commission</h2>
+                <p class="text-xs text-slate-400">
+                    Earn up to <span id="referralRateBadge" class="text-amber-400 font-bold">10%</span> lifetime commission whenever your referred friends complete tasks or upgrade VIP tiers!
+                </p>
+
+                <!-- Generated Referral Input -->
+                <div class="flex items-center space-x-2 pt-2">
+                    <input type="text" id="referralLinkInput" readonly class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-slate-300 font-mono focus:outline-none">
+                    <button onclick="copyReferralLink()" class="px-4 py-2.5 bg-brand-600 hover:bg-brand-500 font-semibold text-xs rounded-xl transition-all whitespace-nowrap">
+                        <i class="fa-solid fa-copy mr-1"></i> Copy Link
+                    </button>
+                </div>
+            </div>
+
+            <!-- Affiliate Stats Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="glass-card p-4 rounded-2xl text-center">
+                    <span class="text-xs text-slate-400">Total Referrals</span>
+                    <div class="text-2xl font-bold text-white mt-1" id="statReferralCount">3</div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl text-center">
+                    <span class="text-xs text-slate-400">Commission Earned</span>
+                    <div class="text-2xl font-bold text-emerald-400 mt-1" id="statReferralEarned">$14.50</div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl text-center">
+                    <span class="text-xs text-slate-400">Current Rate</span>
+                    <div class="text-2xl font-bold text-amber-400 mt-1" id="statReferralRate">10%</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: ADMIN CONTROL PANEL -->
+        <section id="tab-admin" class="tab-content hidden space-y-6">
+            <div class="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fa-solid fa-shield-halved text-amber-400 text-xl"></i>
+                    <div>
+                        <h2 class="text-sm font-bold text-amber-400">Platform Admin Control Panel</h2>
+                        <p class="text-xs text-slate-400">Manage platform payouts, tasks, system settings, and owner revenue.</p>
+                    </div>
+                </div>
+                <span class="text-xs font-mono bg-amber-500/20 text-amber-300 px-2.5 py-1 rounded-md font-bold">ADMIN ACCESS</span>
+            </div>
+
+            <!-- Admin Key Metrics (Owner Commission Tracker) -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass-card p-4 rounded-2xl border-l-4 border-l-emerald-500">
+                    <div class="text-slate-400 text-xs font-medium">Owner Commission</div>
+                    <div class="text-2xl font-extrabold text-emerald-400 mt-1" id="adminOwnerRevenue">$0.00</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Calculated from user upgrades</div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl border-l-4 border-l-brand-500">
+                    <div class="text-slate-400 text-xs font-medium">Platform Deposits</div>
+                    <div class="text-2xl font-extrabold text-brand-500 mt-1" id="adminTotalDeposits">$0.00</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Total user funding</div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl border-l-4 border-l-amber-500">
+                    <div class="text-slate-400 text-xs font-medium">Commission Rate</div>
+                    <div class="text-2xl font-extrabold text-amber-400 mt-1"><span id="adminRateDisplay">15</span>%</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Admin fee on upgrades</div>
+                </div>
+                <div class="glass-card p-4 rounded-2xl border-l-4 border-l-purple-500">
+                    <div class="text-slate-400 text-xs font-medium">Pending Txns</div>
+                    <div class="text-2xl font-extrabold text-purple-400 mt-1" id="adminPendingCount">0</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Requires approval</div>
+                </div>
+            </div>
+
+            <!-- Admin Global Controls -->
+            <div class="glass-card p-4 rounded-2xl space-y-4">
+                <h3 class="text-sm font-bold text-white border-b border-slate-800 pb-2">Global Commission & System Rates</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Owner Commission Rate (%)</label>
+                        <div class="flex space-x-2">
+                            <input type="number" id="inputAdminRate" min="1" max="50" value="15" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white w-full focus:outline-none">
+                            <button onclick="updateAdminRate()" class="px-4 py-1.5 bg-brand-600 hover:bg-brand-500 rounded-xl text-xs font-bold whitespace-nowrap">Save Rate</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Transactions Management -->
+            <div class="glass-card p-4 rounded-2xl space-y-4">
+                <h3 class="text-sm font-bold text-white flex items-center justify-between">
+                    <span>Pending Deposit & Withdrawal Requests</span>
+                    <span class="text-xs font-normal text-slate-400">Click actions to approve or reject</span>
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/60 text-slate-400 uppercase">
+                            <tr>
+                                <th class="p-3">User</th>
+                                <th class="p-3">Type</th>
+                                <th class="p-3">Amount</th>
+                                <th class="p-3">Ref/Destination</th>
+                                <th class="p-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTxTableBody" class="divide-y divide-slate-800 text-slate-300">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Manage Available Tasks -->
+            <div class="glass-card p-4 rounded-2xl space-y-4">
+                <h3 class="text-sm font-bold text-white border-b border-slate-800 pb-2">Add New Daily Task</h3>
+                <form id="addTaskForm" onsubmit="handleAddTask(event)" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <input type="text" id="newTaskTitle" placeholder="Task Title (e.g. Subscribe to Channel)" required class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    <input type="number" step="0.1" id="newTaskReward" placeholder="Reward ($)" required class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs py-2">Add Task</button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar for Mobile -->
+    <nav class="glass-card fixed bottom-0 left-0 right-0 z-40 border-t border-slate-800 py-2">
+        <div class="max-w-md mx-auto flex justify-around items-center px-2">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active flex flex-col items-center space-y-1 text-brand-500 transition-all">
+                <i class="fa-solid fa-chart-pie text-lg"></i>
+                <span class="text-[10px] font-semibold">Home</span>
+            </button>
+            <button onclick="switchTab('tasks')" id="nav-tasks" class="nav-btn flex flex-col items-center space-y-1 text-slate-400 hover:text-slate-200 transition-all">
+                <i class="fa-solid fa-list-check text-lg"></i>
+                <span class="text-[10px] font-semibold">Tasks</span>
+            </button>
+            <button onclick="switchTab('wallet')" id="nav-wallet" class="nav-btn flex flex-col items-center space-y-1 text-slate-400 hover:text-slate-200 transition-all">
+                <i class="fa-solid fa-wallet text-lg"></i>
+                <span class="text-[10px] font-semibold">Wallet</span>
+            </button>
+            <button onclick="switchTab('referrals')" id="nav-referrals" class="nav-btn flex flex-col items-center space-y-1 text-slate-400 hover:text-slate-200 transition-all">
+                <i class="fa-solid fa-users text-lg"></i>
+                <span class="text-[10px] font-semibold">Referrals</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Application Script Logic -->
+    <script>
+        // --- CENTRAL APPLICATION STATE ---
+        const state = {
+            user: {
+                mainBalance: 12.50,
+                depositBalance: 50.00,
+                totalEarned: 24.00,
+                currentVipLevel: 1, // 1: Bronze, 2: Silver, 3: Gold
+                tasksDoneToday: 1,
+                referralCode: "USER" + Math.floor(1000 + Math.random() * 9000),
+                referralEarned: 14.50,
+                referralCount: 3
+            },
+            admin: {
+                ownerCommissionRate: 15, // Percentage of VIP deposit that goes to owner
+                totalOwnerCommission: 45.00,
+                totalSystemDeposits: 350.00
+            },
+            vipTiers: [
+                { level: 1, name: "Bronze VIP", price: 0, dailyLimit: 5, rewardMultiplier: 1.0, color: "from-amber-700 to-amber-900" },
+                { level: 2, name: "Silver VIP", price: 50, dailyLimit: 12, rewardMultiplier: 1.5, color: "from-slate-400 to-slate-600" },
+                { level: 3, name: "Gold VIP", price: 150, dailyLimit: 25, rewardMultiplier: 2.5, color: "from-amber-400 to-amber-600" }
+            ],
+            tasks: [
+                { id: 1, title: "Watch Promotional Video", reward: 1.20, timerSeconds: 5, status: "available" },
+                { id: 2, title: "Visit Sponsor Website", reward: 0.80, timerSeconds: 4, status: "completed" },
+                { id: 3, title: "Like & Retweet Partner Post", reward: 1.50, timerSeconds: 6, status: "available" },
+                { id: 4, title: "Install Sponsor Demo App", reward: 2.50, timerSeconds: 8, status: "available" }
+            ],
+            transactions: [
+                { id: "TX101", user: "DemoUser", type: "Deposit", amount: 50.00, details: "USDT - TRC20", status: "Approved", date: "2026-10-23" },
+                { id: "TX102", user: "DemoUser", type: "Withdrawal", amount: 10.00, details: "USDT Wallet", status: "Approved", date: "2026-10-24" }
+            ]
+        };
+
+        // --- INIT APP ON LOAD ---
+        window.onload = function() {
+            renderDashboard();
+            renderVipTiers();
+            renderTasks();
+            renderTransactions();
+            renderReferrals();
+            renderAdminPanel();
+        };
+
+        // --- NAVIGATION CONTROLLER ---
+        function switchTab(tabId) {
+            // Hide all contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Show target content
+            const target = document.getElementById(`tab-${tabId}`);
+            if(target) target.classList.remove('hidden');
+
+            // Update mobile navigation styling
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-brand-500');
+                btn.classList.add('text-slate-400');
+            });
+            const activeNavBtn = document.getElementById(`nav-${tabId}`);
+            if(activeNavBtn) {
+                activeNavBtn.classList.remove('text-slate-400');
+                activeNavBtn.classList.add('text-brand-500');
+            }
+        }
+
+        function toggleWalletSubTab(subTab) {
+            const depositSec = document.getElementById('wallet-deposit-section');
+            const withdrawSec = document.getElementById('wallet-withdraw-section');
+            const btnDep = document.getElementById('btn-subtab-deposit');
+            const btnWith = document.getElementById('btn-subtab-withdraw');
+
+            if(subTab === 'deposit') {
+                depositSec.classList.remove('hidden');
+                withdrawSec.classList.add('hidden');
+                btnDep.className = "pb-3 text-sm font-bold border-b-2 border-brand-500 text-brand-500 transition-all";
+                btnWith.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all";
+            } else {
+                depositSec.classList.add('hidden');
+                withdrawSec.classList.remove('hidden');
+                btnWith.className = "pb-3 text-sm font-bold border-b-2 border-brand-500 text-brand-500 transition-all";
+                btnDep.className = "pb-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all";
+            }
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function renderDashboard() {
+            document.getElementById('userMainBalance').innerText = `$${state.user.mainBalance.toFixed(2)}`;
+            document.getElementById('userDepositBalance').innerText = `$${state.user.depositBalance.toFixed(2)}`;
+            document.getElementById('userTotalEarned').innerText = `$${state.user.totalEarned.toFixed(2)}`;
+            
+            const currentTier = state.vipTiers.find(t => t.level === state.user.currentVipLevel);
+            document.getElementById('userTasksDone').innerText = state.user.tasksDoneToday;
+            document.getElementById('userTaskLimit').innerText = currentTier.dailyLimit;
+            document.getElementById('headerVipBadge').innerText = currentTier.name.toUpperCase();
+            document.getElementById('taskEngineProgressText').innerText = `${state.user.tasksDoneToday} / ${currentTier.dailyLimit} Completed`;
+        }
+
+        function renderVipTiers() {
+            const container = document.getElementById('vipTierGrid');
+            container.innerHTML = '';
+
+            state.vipTiers.forEach(tier => {
+                const isCurrent = state.user.currentVipLevel === tier.level;
+                const card = document.createElement('div');
+                card.className = `glass-card p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden border ${isCurrent ? 'border-amber-400' : 'border-slate-800'}`;
+                
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r ${tier.color} text-white">
+                                ${tier.name}
+                            </span>
+                            ${isCurrent ? '<span class="text-[10px] font-bold bg-amber-400/20 text-amber-400 px-2 py-0.5 rounded-full border border-amber-400/40">ACTIVE</span>' : ''}
+                        </div>
+                        <div class="text-3xl font-extrabold text-white mb-2">$${tier.price} <span class="text-xs text-slate-400 font-normal">/ tier upgrade</span></div>
+                        <ul class="text-xs space-y-2 text-slate-300 my-4">
+                            <li class="flex items-center"><i class="fa-solid fa-check text-emerald-400 mr-2"></i> ${tier.dailyLimit} Daily Tasks</li>
+                            <li class="flex items-center"><i class="fa-solid fa-check text-emerald-400 mr-2"></i> ${tier.rewardMultiplier}x Reward Rate</li>
+                            <li class="flex items-center"><i class="fa-solid fa-check text-emerald-400 mr-2"></i> Priority Withdrawals</li>
+                        </ul>
+                    </div>
+                    <button onclick="upgradeVip(${tier.level})" ${isCurrent ? 'disabled' : ''} class="w-full py-2.5 rounded-xl text-xs font-bold transition-all ${isCurrent ? 'bg-slate-800 text-slate-500 cursor-not-allowed' : 'bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-500/20'}">
+                        ${isCurrent ? 'Current Plan' : 'Upgrade Now'}
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderTasks() {
+            const container = document.getElementById('taskListContainer');
+            container.innerHTML = '';
+
+            const currentTier = state.vipTiers.find(t => t.level === state.user.currentVipLevel);
+
+            state.tasks.forEach(task => {
+                const calculatedReward = (task.reward * currentTier.rewardMultiplier).toFixed(2);
+                const isCompleted = task.status === 'completed';
+
+                const card = document.createElement('div');
+                card.className = "glass-card p-4 rounded-2xl flex items-center justify-between";
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <h4 class="text-sm font-bold text-white">${task.title}</h4>
+                        <div class="flex items-center space-x-2 text-xs">
+                            <span class="text-emerald-400 font-semibold">+$${calculatedReward}</span>
+                            <span class="text-slate-500">•</span>
+                            <span class="text-slate-400"><i class="fa-regular fa-clock mr-1"></i>${task.timerSeconds}s action</span>
+                        </div>
+                    </div>
+                    <div>
+                        <button id="task-btn-${task.id}" onclick="startTask(${task.id})" ${isCompleted ? 'disabled' : ''} class="px-4 py-2 rounded-xl text-xs font-bold transition-all ${isCompleted ? 'bg-slate-800 text-slate-500 border border-slate-700' : 'bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-500/20'}">
+                            ${isCompleted ? '<i class="fa-solid fa-circle-check mr-1 text-emerald-400"></i> Done' : 'Start Task'}
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderTransactions() {
+            const userBody = document.getElementById('userTxTableBody');
+            const adminBody = document.getElementById('adminTxTableBody');
+            userBody.innerHTML = '';
+            adminBody.innerHTML = '';
+
+            let pendingCount = 0;
+
+            state.transactions.forEach(tx => {
+                if(tx.status === 'Pending') pendingCount++;
+
+                // User Table Row
+                const userRow = document.createElement('tr');
+                userRow.innerHTML = `
+                    <td class="p-3 font-semibold">${tx.type}</td>
+                    <td class="p-3 ${tx.type === 'Deposit' ? 'text-emerald-400' : 'text-slate-200'}">$${tx.amount.toFixed(2)}</td>
+                    <td class="p-3 text-slate-400">${tx.details}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${getBadgeStyle(tx.status)}">${tx.status}</span></td>
+                    <td class="p-3 text-slate-500">${tx.date}</td>
+                `;
+                userBody.appendChild(userRow);
+
+                // Admin Table Row (Show Pending or All)
+                const adminRow = document.createElement('tr');
+                adminRow.innerHTML = `
+                    <td class="p-3 font-medium">${tx.user}</td>
+                    <td class="p-3">${tx.type}</td>
+                    <td class="p-3 font-bold">$${tx.amount.toFixed(2)}</td>
+                    <td class="p-3 text-slate-400 font-mono text-[10px]">${tx.details}</td>
+                    <td class="p-3">
+                        ${tx.status === 'Pending' ? `
+                            <button onclick="approveTransaction('${tx.id}')" class="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-[10px] font-bold mr-1">Approve</button>
+                            <button onclick="rejectTransaction('${tx.id}')" class="px-2 py-1 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold">Reject</button>
+                        ` : `<span class="text-[10px] font-bold ${getBadgeStyle(tx.status)}">${tx.status}</span>`}
+                    </td>
+                `;
+                adminBody.appendChild(adminRow);
+            });
+
+            document.getElementById('adminPendingCount').innerText = pendingCount;
+        }
+
+        function getBadgeStyle(status) {
+            if(status === 'Approved') return 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+            if(status === 'Pending') return 'bg-amber-500/20 text-amber-400 border border-amber-500/30';
+            return 'bg-rose-500/20 text-rose-400 border border-rose-500/30';
+        }
+
+        function renderReferrals() {
+            const link = `${window.location.origin}/?ref=${state.user.referralCode}`;
+            document.getElementById('referralLinkInput').value = link;
+            document.getElementById('statReferralCount').innerText = state.user.referralCount;
+            document.getElementById('statReferralEarned').innerText = `$${state.user.referralEarned.toFixed(2)}`;
+            document.getElementById('statReferralRate').innerText = `${state.admin.ownerCommissionRate}%`;
+            document.getElementById('referralRateBadge').innerText = `${state.admin.ownerCommissionRate}%`;
+        }
+
+        function renderAdminPanel() {
+            document.getElementById('adminOwnerRevenue').innerText = `$${state.admin.totalOwnerCommission.toFixed(2)}`;
+            document.getElementById('adminTotalDeposits').innerText = `$${state.admin.totalSystemDeposits.toFixed(2)}`;
+            document.getElementById('adminRateDisplay').innerText = state.admin.ownerCommissionRate;
+            document.getElementById('inputAdminRate').value = state.admin.ownerCommissionRate;
+        }
+
+        // --- TASK ENGINE TIMERS & REWARDS ---
+        function startTask(taskId) {
+            const currentTier = state.vipTiers.find(t => t.level === state.user.currentVipLevel);
+            if(state.user.tasksDoneToday >= currentTier.dailyLimit) {
+                showToast("Daily task limit reached for your current VIP Tier!", "error");
+                return;
+            }
+
+            const task = state.tasks.find(t => t.id === taskId);
+            const btn = document.getElementById(`task-btn-${taskId}`);
+            let remaining = task.timerSeconds;
+
+            btn.disabled = true;
+            btn.className = "px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 text-white animate-pulse";
+            btn.innerText = `Verifying (${remaining}s)...`;
+
+            const interval = setInterval(() => {
+                remaining--;
+                if(remaining > 0) {
+                    btn.innerText = `Verifying (${remaining}s)...`;
+                } else {
+                    clearInterval(interval);
+                    completeTask(task, currentTier);
+                }
+            }, 1000);
+        }
+
+        function completeTask(task, currentTier) {
+            task.status = "completed";
+            const rewardEarned = task.reward * currentTier.rewardMultiplier;
+            
+            // State updates
+            state.user.mainBalance += rewardEarned;
+            state.user.totalEarned += rewardEarned;
+            state.user.tasksDoneToday += 1;
+
+            showToast(`Task Completed! Earned +$${rewardEarned.toFixed(2)}`, "success");
+            
+            renderDashboard();
+            renderTasks();
+        }
+
+        // --- VIP UPGRADE LOGIC ---
+        function upgradeVip(targetLevel) {
+            const targetTier = state.vipTiers.find(t => t.level === targetLevel);
+            
+            if(state.user.depositBalance < targetTier.price) {
+                showToast(`Insufficient Deposit Balance! Upgrade requires $${targetTier.price}`, "error");
+                return;
+            }
+
+            // Deduct deposit balance
+            state.user.depositBalance -= targetTier.price;
+            state.user.currentVipLevel = targetLevel;
+
+            // Owner Commission Calculation
+            const ownerFee = (targetTier.price * state.admin.ownerCommissionRate) / 100;
+            state.admin.totalOwnerCommission += ownerFee;
+
+            showToast(`Successfully upgraded to ${targetTier.name}!`, "success");
+            
+            renderDashboard();
+            renderVipTiers();
+            renderTasks();
+            renderAdminPanel();
+        }
+
+        // --- DEPOSIT & WITHDRAW FORM SUBMISSIONS ---
+        function handleDepositSubmit(e) {
+            e.preventDefault();
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            const gateway = document.getElementById('depositGateway').value;
+            const ref = document.getElementById('depositTxRef').value;
+
+            const newTx = {
+                id: "TX" + Math.floor(1000 + Math.random() * 9000),
+                user: "DemoUser",
+                type: "Deposit",
+                amount: amount,
+                details: `${gateway} (${ref})`,
+                status: "Pending",
+                date: new Date().toISOString().split('T')[0]
+            };
+
+            state.transactions.unshift(newTx);
+            showToast("Deposit request submitted! Awaiting admin approval.", "info");
+            
+            document.getElementById('depositForm').reset();
+            renderTransactions();
+        }
+
+        function handleWithdrawSubmit(e) {
+            e.preventDefault();
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const method = document.getElementById('withdrawMethod').value;
+            const dest = document.getElementById('withdrawDestination').value;
+
+            if(state.user.mainBalance < amount) {
+                showToast("Insufficient Main Balance for withdrawal!", "error");
+                return;
+            }
+
+            // Lock user balance temporarily
+            state.user.mainBalance -= amount;
+
+            const newTx = {
+                id: "TX" + Math.floor(1000 + Math.random() * 9000),
+                user: "DemoUser",
+                type: "Withdrawal",
+                amount: amount,
+                details: `${method} (${dest})`,
+                status: "Pending",
+                date: new Date().toISOString().split('T')[0]
+            };
+
+            state.transactions.unshift(newTx);
+            showToast("Withdrawal request submitted for approval!", "info");
+
+            document.getElementById('withdrawForm').reset();
+            renderDashboard();
+            renderTransactions();
+        }
+
+        // --- ADMIN CONTROLLER ACTIONS ---
+        function approveTransaction(txId) {
+            const tx = state.transactions.find(t => t.id === txId);
+            if(!tx) return;
+
+            tx.status = "Approved";
+
+            if(tx.type === "Deposit") {
+                state.user.depositBalance += tx.amount;
+                state.admin.totalSystemDeposits += tx.amount;
+                showToast(`Approved Deposit of $${tx.amount.toFixed(2)}`, "success");
+            } else {
+                showToast(`Approved Withdrawal of $${tx.amount.toFixed(2)}`, "success");
+            }
+
+            renderDashboard();
+            renderTransactions();
+            renderAdminPanel();
+        }
+
+        function rejectTransaction(txId) {
+            const tx = state.transactions.find(t => t.id === txId);
+            if(!tx) return;
+
+            tx.status = "Rejected";
+
+            // Refund main balance if withdrawal was rejected
+            if(tx.type === "Withdrawal") {
+                state.user.mainBalance += tx.amount;
+            }
+
+            showToast(`Rejected ${tx.type} Request`, "error");
+
+            renderDashboard();
+            renderTransactions();
+        }
+
+        function updateAdminRate() {
+            const val = parseFloat(document.getElementById('inputAdminRate').value);
+            if(val >= 0 && val <= 100) {
+                state.admin.ownerCommissionRate = val;
+                showToast(`Admin commission rate updated to ${val}%`, "success");
+                renderAdminPanel();
+                renderReferrals();
+            }
+        }
+
+        function handleAddTask(e) {
+            e.preventDefault();
+            const title = document.getElementById('newTaskTitle').value;
+            const reward = parseFloat(document.getElementById('newTaskReward').value);
+
+            const newTask = {
+                id: state.tasks.length + 1,
+                title: title,
+                reward: reward,
+                timerSeconds: 5,
+                status: "available"
+            };
+
+            state.tasks.push(newTask);
+            showToast("New task added to daily engine!", "success");
+            document.getElementById('addTaskForm').reset();
+            renderTasks();
+        }
+
+        // --- UTILITY FUNCTIONS ---
+        function copyReferralLink() {
+            const input = document.getElementById('referralLinkInput');
+            input.select();
+            document.execCommand('copy');
+            showToast("Referral link copied to clipboard!", "info");
+        }
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            let bgStyle = "bg-slate-800 border-slate-700 text-white";
+            if(type === "success") bgStyle = "bg-emerald-600 text-white";
+            if(type === "error") bgStyle = "bg-rose-600 text-white";
+            if(type === "info") bgStyle = "bg-brand-600 text-white";
+
+            toast.className = `px-4 py-3 rounded-xl shadow-xl border text-xs font-semibold transition-all transform translate-y-2 opacity-0 flex items-center space-x-2 pointer-events-auto ${bgStyle}`;
+            toast.innerHTML = `<span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            // Remove after delay
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+```
